@@ -23,6 +23,6 @@ const getProvider = () => {
 
 export const getProgram = () => {
   const provider = getProvider();
-  const programID = new PublicKey("73tgv477c3JoKghrWQ3Nq3pAxuSM2WvXzuE9MUGxcuFq"); // your program ID
+  const programID = new PublicKey("J47PG3y5XHQm36EhDZpMY7rpkSfJMBEYxYKkk5T8CqfL"); // your program ID
   return new Program(idl, programID, provider);
 };

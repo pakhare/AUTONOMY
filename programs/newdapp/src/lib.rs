@@ -2,9 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount, Transfer};
 use anchor_spl::associated_token::AssociatedToken;
 
-// declare_id!("6DupSgN4DqaSupZ7db2Cn5s7tMRvR5AaAzT7m2JN7Uf4");
-
-declare_id!("73tgv477c3JoKghrWQ3Nq3pAxuSM2WvXzuE9MUGxcuFq");
+declare_id!("J47PG3y5XHQm36EhDZpMY7rpkSfJMBEYxYKkk5T8CqfL");
 
 #[program]
 pub mod newdapp {
@@ -17,15 +15,15 @@ pub mod newdapp {
     ) -> Result<()> {
         require!(dao_name.len() <= 100, CustomError::StringTooLong);
 
+        let dao_key = ctx.accounts.dao.key();
         let dao = &mut ctx.accounts.dao;
         dao.authority = *ctx.accounts.authority.key;
-        dao.dao_name = dao_name;
+        dao.dao_name = dao_name.as_bytes().to_vec();
         dao.token_mint = ctx.accounts.token_mint.key();
         dao.total_supply = total_supply;
         dao.proposal_count = 0;
         dao.bump = *ctx.bumps.get("dao").unwrap();
 
-        let dao_key = dao.key();
         let mint_bump = *ctx.bumps.get("token_mint_authority").unwrap();
         let seeds: &[&[u8]] = &[b"mint_auth", dao_key.as_ref(), &[mint_bump]];
         let signer_seeds: &[&[&[u8]]] = &[seeds];
@@ -57,10 +55,11 @@ pub mod newdapp {
 
         proposal.dao = dao.key();
         proposal.proposal_id = dao.proposal_count + 1;
-        proposal.title = title;
-        proposal.description = description;
+        proposal.title = title.as_bytes().to_vec();
+        proposal.description = description.as_bytes().to_vec();
         proposal.amount = amount;
         proposal.recipient = recipient;
+        proposal.creator = ctx.accounts.authority.key();
         proposal.votes_for = 0;
         proposal.votes_against = 0;
         proposal.executed = false;
@@ -124,7 +123,7 @@ pub mod newdapp {
 #[account]
 pub struct Dao {
     pub authority: Pubkey,
-    pub dao_name: String, // Max 100 bytes
+    pub dao_name: Vec<u8>,
     pub token_mint: Pubkey,
     pub total_supply: u64,
     pub proposal_count: u64,
@@ -135,19 +134,16 @@ pub struct Dao {
 pub struct Proposal {
     pub dao: Pubkey,
     pub proposal_id: u64,
-    pub title: String, // Max 100
-    pub description: String, // Max 500
+    pub title: Vec<u8>,
+    pub description: Vec<u8>,
     pub amount: u64,
     pub recipient: Pubkey,
+    pub creator: Pubkey,
     pub votes_for: u64,
     pub votes_against: u64,
     pub executed: bool,
     pub bump: u8,
 }
-
-// ----------------------------
-// Contexts
-// ----------------------------
 
 #[derive(Accounts)]
 #[instruction(dao_name: String, total_supply: u64)]
@@ -259,10 +255,6 @@ pub struct DeleteDao<'info> {
     pub authority: Signer<'info>,
 }
 
-// ----------------------------
-// Errors
-// ----------------------------
-
 #[error_code]
 pub enum CustomError {
     #[msg("Proposal already executed")]
@@ -274,3 +266,4 @@ pub enum CustomError {
     #[msg("String too long")]
     StringTooLong,
 }
+

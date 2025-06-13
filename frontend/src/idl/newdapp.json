@@ -195,7 +195,7 @@
           },
           {
             "name": "daoName",
-            "type": "string"
+            "type": "bytes"
           },
           {
             "name": "tokenMint",
@@ -231,11 +231,11 @@
           },
           {
             "name": "title",
-            "type": "string"
+            "type": "bytes"
           },
           {
             "name": "description",
-            "type": "string"
+            "type": "bytes"
           },
           {
             "name": "amount",
@@ -243,6 +243,10 @@
           },
           {
             "name": "recipient",
+            "type": "publicKey"
+          },
+          {
+            "name": "creator",
             "type": "publicKey"
           },
           {
@@ -288,6 +292,6 @@
     }
   ],
   "metadata": {
-    "address": "73tgv477c3JoKghrWQ3Nq3pAxuSM2WvXzuE9MUGxcuFq"
+    "address": "3AzHyBQYSudDHr3NiZRW16sQWmQ6773AT3YFuBD6qY2i"
   }
 }

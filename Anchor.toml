@@ -8,7 +8,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-newdapp = "6DupSgN4DqaSupZ7db2Cn5s7tMRvR5AaAzT7m2JN7Uf4"
+newdapp = "J47PG3y5XHQm36EhDZpMY7rpkSfJMBEYxYKkk5T8CqfL"
 
 [registry]
 url = "https://api.apr.dev"
