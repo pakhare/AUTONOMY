@@ -53,6 +53,10 @@
       ],
       "args": [
         {
+          "name": "daoId",
+          "type": "u64"
+        },
+        {
           "name": "daoName",
           "type": "string"
         },
@@ -61,6 +65,37 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "addMember",
+      "accounts": [
+        {
+          "name": "dao",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "member",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "newMember",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     },
     {
       "name": "createProposal",
@@ -102,6 +137,10 @@
         {
           "name": "recipient",
           "type": "publicKey"
+        },
+        {
+          "name": "votingDeadline",
+          "type": "i64"
         }
       ]
     },
@@ -114,19 +153,35 @@
           "isSigner": false
         },
         {
-          "name": "voter",
+          "name": "voterTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "voterRecord",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "member",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "voter",
+          "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
         {
           "name": "approve",
           "type": "bool"
-        },
-        {
-          "name": "voterWeight",
-          "type": "u64"
         }
       ]
     },
@@ -165,22 +220,6 @@
         }
       ],
       "args": []
-    },
-    {
-      "name": "deleteDao",
-      "accounts": [
-        {
-          "name": "dao",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
-        }
-      ],
-      "args": []
     }
   ],
   "accounts": [
@@ -195,7 +234,7 @@
           },
           {
             "name": "daoName",
-            "type": "bytes"
+            "type": "string"
           },
           {
             "name": "tokenMint",
@@ -217,6 +256,22 @@
       }
     },
     {
+      "name": "Member",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "dao",
+            "type": "publicKey"
+          },
+          {
+            "name": "wallet",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
       "name": "Proposal",
       "type": {
         "kind": "struct",
@@ -231,11 +286,11 @@
           },
           {
             "name": "title",
-            "type": "bytes"
+            "type": "string"
           },
           {
             "name": "description",
-            "type": "bytes"
+            "type": "string"
           },
           {
             "name": "amount",
@@ -264,6 +319,22 @@
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "votingDeadline",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VoterRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "voted",
+            "type": "bool"
           }
         ]
       }
@@ -289,9 +360,24 @@
       "code": 6003,
       "name": "StringTooLong",
       "msg": "String too long"
+    },
+    {
+      "code": 6004,
+      "name": "MathOverflow",
+      "msg": "Math Overflow"
+    },
+    {
+      "code": 6005,
+      "name": "AlreadyVoted",
+      "msg": "Already voted"
+    },
+    {
+      "code": 6006,
+      "name": "VotingPeriodExpired",
+      "msg": "Voting period expired"
     }
   ],
   "metadata": {
-    "address": "3AzHyBQYSudDHr3NiZRW16sQWmQ6773AT3YFuBD6qY2i"
+    "address": "DJP29BHSSNf2peZoXqzXZpVWZSZZVrK6xrDS3NEoMK1R"
   }
 }

@@ -1,21 +1,34 @@
+""// ./components/InitializeDao.js
 import React, { useState, useEffect } from "react";
 import { getProgram } from "../utils/connection";
 import {
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
+  Transaction,
 } from "@solana/web3.js";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   getAssociatedTokenAddress,
+  getAccount,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
 import BN from "bn.js";
 
 const InitializeDao = () => {
+  const [daoId, setDaoId] = useState(() => {
+    const urlParam = new URLSearchParams(window.location.search).get("daoId");
+    if (urlParam) return new BN(urlParam);
+    const newId = new BN(Date.now());
+    window.history.replaceState({}, "", `?daoId=${newId.toString()}`);
+    return newId;
+  });
+
   const [daoName, setDaoName] = useState("");
   const [supply, setSupply] = useState("");
+  const [memberList, setMemberList] = useState("");
   const [daoInfo, setDaoInfo] = useState(null);
   const [proposalTitle, setProposalTitle] = useState("");
   const [proposalDescription, setProposalDescription] = useState("");
@@ -25,30 +38,67 @@ const InitializeDao = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const wallet = useWallet();
+  const [proposalDeadline, setProposalDeadline] = useState("");
+  
+  const [myDaos, setMyDaos] = useState([]);
 
-  useEffect(() => {
-    const fetchDao = async () => {
-    
-      if (!wallet.publicKey) return;
-      const program = getProgram();
-          const proposalsRaw = await program.account.proposal.all();
-console.log("Raw Proposals:", proposalsRaw);
-      const [daoPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("dao"), wallet.publicKey.toBuffer()],
+const fetchMyDaos = async () => {
+  if (!wallet.publicKey) return;
+  try {
+    const program = getProgram();
+    const allDaos = await program.account.dao.all();
+
+    const relevantDaos = [];
+
+    for (const dao of allDaos) {
+      const daoPda = dao.publicKey;
+      const [memberPda] = await PublicKey.findProgramAddress(
+        [Buffer.from("member"), daoPda.toBuffer(), wallet.publicKey.toBuffer()],
         program.programId
       );
+
       try {
+        await program.account.member.fetch(memberPda);
+        relevantDaos.push(dao); // User is a member
+      } catch (_) {
+        if (dao.account.authority.toBase58() === wallet.publicKey.toBase58()) {
+          relevantDaos.push(dao); // User is the creator
+        }
+      }
+    }
+
+    setMyDaos(relevantDaos);
+  } catch (err) {
+    console.error("Error fetching my DAOs:", err);
+  }
+};
+
+
+
+
+  useEffect(() => {
+    if (!wallet.publicKey) return;
+    const fetchDao = async () => {
+      try {
+      
+        const program = getProgram();
+        const [daoPda] = PublicKey.findProgramAddressSync(
+          [
+            Buffer.from("dao"),
+            wallet.publicKey.toBuffer(),
+            new BN(daoId).toArrayLike(Buffer, "le", 8),
+          ],
+          program.programId
+        );
         const daoAccount = await program.account.dao.fetch(daoPda);
-        setDaoInfo({
-          ...daoAccount,
-          pubkey: daoPda.toBase58(),
-        });
-      } catch (err) {
+        setDaoInfo({ ...daoAccount, pubkey: daoPda.toBase58() });
+      } catch (e) {
+        console.warn("DAO not found for daoId", daoId.toString());
         setDaoInfo(null);
       }
     };
     fetchDao();
-  }, [wallet.publicKey]);
+  }, [wallet.publicKey, daoId]);
 
   useEffect(() => {
     if (daoInfo) fetchProposals();
@@ -70,18 +120,14 @@ console.log("Raw Proposals:", proposalsRaw);
           ],
           program.programId
         );
-        console.log("Proposal PDA:", proposalPda.toBase58());
+        console.log("📌 Proposal PDA:", proposalPda.toBase58());
         try {
           const proposalAccount = await program.account.proposal.fetch(proposalPda);
-          fetched.push({
-            ...proposalAccount,
-            pubkey: proposalPda.toBase58(),
-          });
+          fetched.push({ ...proposalAccount, pubkey: proposalPda.toBase58() });
         } catch (e) {
           console.warn(`Proposal ${i} not found`);
         }
       }
-
       setProposals(fetched);
     } catch (err) {
       console.error("Error fetching proposals:", err);
@@ -89,16 +135,16 @@ console.log("Raw Proposals:", proposalsRaw);
   };
 
   const initializeDao = async () => {
-    if (!daoName.trim() || !supply || Number(supply) <= 0) {
-      setError("DAO name cannot be empty and supply must be a positive number.");
-      return;
-    }
+    if (!daoName || !supply || !wallet.publicKey || !memberList) return;
     setIsLoading(true);
-    setError("");
     try {
       const program = getProgram();
       const [daoPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("dao"), wallet.publicKey.toBuffer()],
+        [
+          Buffer.from("dao"),
+          wallet.publicKey.toBuffer(),
+          new BN(daoId).toArrayLike(Buffer, "le", 8),
+        ],
         program.programId
       );
       const [mintPda] = PublicKey.findProgramAddressSync(
@@ -109,18 +155,26 @@ console.log("Raw Proposals:", proposalsRaw);
         [Buffer.from("mint_auth"), daoPda.toBuffer()],
         program.programId
       );
-      const treasuryTokenAccount = await getAssociatedTokenAddress(
-        mintPda,
-        daoPda,
-        true
+      const [memberListPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("member_list"), daoPda.toBuffer()],
+        program.programId
       );
+      const treasuryTokenAccount = await getAssociatedTokenAddress(mintPda, daoPda, true);
+
+      const parsedMemberList = memberList
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((key) => new PublicKey(key));
+
       await program.methods
-        .initialize(daoName, new BN(supply))
+        .initialize(daoId, daoName, new BN(supply))
         .accounts({
           dao: daoPda,
           tokenMint: mintPda,
           tokenMintAuthority: mintAuthPda,
           treasuryTokenAccount,
+          memberList: memberListPda,
           authority: wallet.publicKey,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
@@ -129,205 +183,259 @@ console.log("Raw Proposals:", proposalsRaw);
         })
         .rpc();
 
+      for (const member of parsedMemberList) {
+        const [memberPda] = await PublicKey.findProgramAddress(
+          [Buffer.from("member"), daoPda.toBuffer(), member.toBuffer()],
+          program.programId
+        );
+
+        await program.methods
+          .addMember()
+          .accounts({
+            dao: daoPda,
+            member: memberPda,
+            newMember: member,
+            authority: wallet.publicKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+      }
+
       const daoAccount = await program.account.dao.fetch(daoPda);
-      setDaoInfo({
-        ...daoAccount,
-        pubkey: daoPda.toBase58(),
-      });
-      setDaoName("");
-      setSupply("");
+      setDaoInfo({ ...daoAccount, pubkey: daoPda.toBase58() });
     } catch (error) {
       console.error("Error creating DAO:", error);
-      setError("Failed to create DAO. Check console for details.");
+      setError("Failed to create DAO. See console.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const deleteDao = async () => {
-    if (!wallet.publicKey) return;
+  const createProposal = async () => {
+    if (!daoInfo || !wallet.publicKey) return;
+    setIsLoading(true);
     try {
       const program = getProgram();
-      const [daoPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("dao"), wallet.publicKey.toBuffer()],
+      const daoPubkey = new PublicKey(daoInfo.pubkey);
+      const proposalIndex = Number(daoInfo.proposalCount ?? 0) + 1;
+      const [proposalPda] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("proposal"),
+          daoPubkey.toBuffer(),
+          new BN(proposalIndex).toArrayLike(Buffer, "le", 8),
+        ],
         program.programId
       );
-      await program.methods
-        .deleteDao()
-        .accounts({
-          dao: daoPda,
-          authority: wallet.publicKey,
-        })
-        .rpc();
-      alert("DAO deleted successfully.");
-      setDaoInfo(null);
-      setProposals([]);
-    } catch (error) {
-      console.error("Error deleting DAO:", error);
-      alert("Failed to delete DAO. Check console for details.");
+
+const unixDeadline = Math.floor(new Date(proposalDeadline).getTime() / 1000); // convert to i64
+
+await program.methods
+  .createProposal(
+    proposalTitle,
+    proposalDescription,
+    new BN(proposalAmount),
+    new PublicKey(proposalRecipient),
+    new BN(unixDeadline)
+  )
+  .accounts({
+    dao: daoPubkey,
+    proposal: proposalPda,
+    authority: wallet.publicKey,
+    systemProgram: SystemProgram.programId,
+  })
+  .rpc();
+
+
+
+      const daoAccount = await program.account.dao.fetch(daoPubkey);
+      setDaoInfo({ ...daoAccount, pubkey: daoPubkey.toBase58() });
+      setProposalTitle("");
+      setProposalDescription("");
+      setProposalAmount("");
+      setProposalRecipient("");
+      fetchProposals();
+    } catch (err) {
+      console.error("Error creating proposal:", err);
+      setError("Failed to create proposal. See console.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const createProposal = async () => {
-  if (!daoInfo || !wallet.publicKey) return;
-  if (
-    !proposalTitle.trim() ||
-    !proposalDescription.trim() ||
-    !proposalAmount ||
-    Number(proposalAmount) <= 0 ||
-    !proposalRecipient.trim()
-  ) {
-    setError("All proposal fields are required and amount must be a positive number.");
-    return;
-  }
-
+const handleVote = async (proposalPubkeyBase58, approve) => {
+  if (!wallet.publicKey || !daoInfo?.tokenMint) return;
   setIsLoading(true);
-  setError("");
-
   try {
     const program = getProgram();
+    const proposalPubkey = new PublicKey(proposalPubkeyBase58);
+    const tokenMint = new PublicKey(daoInfo.tokenMint);
     const daoPubkey = new PublicKey(daoInfo.pubkey);
-    const proposalIndex = Number(daoInfo.proposalCount ?? 0) + 1;
 
-    const [proposalPda] = PublicKey.findProgramAddressSync(
+    const ata = await getAssociatedTokenAddress(tokenMint, wallet.publicKey);
+    const ataInfo = await program.provider.connection.getAccountInfo(ata);
+
+    if (!ataInfo) {
+      const tx = new Transaction().add(
+        createAssociatedTokenAccountInstruction(
+          wallet.publicKey,
+          ata,
+          wallet.publicKey,
+          tokenMint
+        )
+      );
+      await program.provider.sendAndConfirm(tx, []);
+      console.log("Created associated token account");
+    }
+
+    const tokenAccountInfo = await getAccount(program.provider.connection, ata);
+    const voterWeight = new BN(tokenAccountInfo.amount.toString());
+
+    // ✅ Derive voterRecord PDA
+    const [voterRecordPda] = await PublicKey.findProgramAddress(
       [
-        Buffer.from("proposal"),
-        daoPubkey.toBuffer(),
-        new BN(proposalIndex).toArrayLike(Buffer, "le", 8),
+        Buffer.from("voter_record"),
+        proposalPubkey.toBuffer(),
+        wallet.publicKey.toBuffer(),
       ],
       program.programId
     );
 
-    console.log("Creating proposal with creator wallet:", wallet.publicKey.toBase58());
+    // ✅ Derive member PDA
+    const [memberPda] = await PublicKey.findProgramAddress(
+      [
+        Buffer.from("member"),
+        daoPubkey.toBuffer(),
+        wallet.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
 
-    const tx = await program.methods
-      .createProposal(
-        proposalTitle,
-        proposalDescription,
-        new BN(proposalAmount),
-        new PublicKey(proposalRecipient)
-      )
+    await program.methods
+      .vote(approve)
       .accounts({
         dao: daoPubkey,
-        proposal: proposalPda,
-        authority: wallet.publicKey,
-        systemProgram: SystemProgram.programId,
+        proposal: proposalPubkey,
+        voterTokenAccount: ata,
+        voter: wallet.publicKey,
+        voterRecord: voterRecordPda,
+        member: memberPda, // ✅ Add this
       })
-      // This is key to ensure wallet signs if not auto-injected
       .rpc();
 
-    console.log("Transaction Signature:", tx);
-
-    alert("Proposal created successfully.");
-
-
-    setProposalTitle("");
-    setProposalDescription("");
-    setProposalAmount("");
-    setProposalRecipient("");
-
+    alert("Vote submitted!");
     const daoAccount = await program.account.dao.fetch(daoPubkey);
-    setDaoInfo({
-      ...daoAccount,
-      pubkey: daoPubkey.toBase58(),
-    });
-  } catch (error) {
-    console.error("Error creating proposal:", error);
-    setError("Failed to create proposal. Check console for details.");
+    setDaoInfo({ ...daoAccount, pubkey: daoPubkey.toBase58() });
+    fetchProposals();
+    
+    
+  } catch (err) {
+    console.error("Error voting:", err);
+    setError("Failed to vote. See console.");
   } finally {
     setIsLoading(false);
-    
   }
 };
 
 
+
+
   return (
-  
-    <div style={{ maxWidth: "500px", margin: "auto", padding: "20px" }}>
+    <div style={{ maxWidth: "600px", margin: "auto", padding: "20px" }}>
       <h2>Initialize DAO</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <input
-        type="text"
-        placeholder="DAO Name"
-        value={daoName}
-        onChange={(e) => setDaoName(e.target.value)}
+      <input type="text" placeholder="DAO Name" value={daoName} onChange={(e) => setDaoName(e.target.value)} />
+      <input type="number" placeholder="Token Supply" value={supply} onChange={(e) => setSupply(e.target.value)} />
+      <textarea
+        placeholder="Comma-separated member public keys"
+        value={memberList}
+        onChange={(e) => setMemberList(e.target.value)}
+        style={{ width: "100%", height: "60px", marginTop: "10px" }}
       />
-      <input
-        type="number"
-        placeholder="Total Supply"
-        value={supply}
-        onChange={(e) => setSupply(e.target.value)}
-      />
-      <button onClick={initializeDao} disabled={!wallet.connected || isLoading}>
+      <button onClick={initializeDao} disabled={isLoading}>
         {isLoading ? "Creating..." : "Create DAO"}
       </button>
+      
+      <hr style={{ margin: "20px 0" }} />
+<button onClick={fetchMyDaos} disabled={!wallet.publicKey}>
+  View My DAOs
+</button>
+
+{myDaos.length > 0 && (
+  <div style={{ marginTop: "20px" }}>
+    <h3>My DAOs</h3>
+    {myDaos.map(({ publicKey, account }) => (
+      <div
+        key={publicKey.toBase58()}
+        style={{
+          border: "1px solid gray",
+          marginBottom: "10px",
+          padding: "10px",
+          borderRadius: "8px",
+          background: "#f9f9f9",
+        }}
+      >
+        <p><strong>Name:</strong> {account.daoName}</p>
+        <p><strong>Authority:</strong> {account.authority.toBase58()}</p>
+        <p><strong>Proposals:</strong> {account.proposalCount.toString()}</p>
+        <p><strong>Token Mint:</strong> {account.tokenMint.toBase58()}</p>
+        <p><strong>DAO Pubkey:</strong> {publicKey.toBase58()}</p>
+      </div>
+    ))}
+  </div>
+)}
+
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      
+      
 
       {daoInfo && (
-        <div style={{ marginTop: "20px", borderTop: "1px solid #ccc", paddingTop: "10px" }}>
+        <>
           <h3>DAO Info</h3>
-          <p><strong>Public Key:</strong> {daoInfo.pubkey ?? "N/A"}</p>
-          <p><strong>Name:</strong> {daoInfo.daoName ?? "N/A"}</p>
-          <p><strong>Authority:</strong> {daoInfo.authority?.toBase58?.() ?? "N/A"}</p>
-          <p><strong>Token Mint:</strong> {daoInfo.tokenMint?.toBase58?.() ?? "N/A"}</p>
-          <p><strong>Total Supply:</strong> {daoInfo.totalSupply?.toString?.() ?? "N/A"}</p>
-          <p><strong>Proposal Count:</strong> {daoInfo.proposalCount?.toString?.() ?? "0"}</p>
-          <button onClick={deleteDao} style={{ color: "white", background: "red", marginTop: "10px" }} disabled={isLoading}>
-            Delete DAO
-          </button>
+          <p><strong>Name:</strong> {daoInfo.daoName}</p>
+          <p><strong>Authority:</strong> {daoInfo.authority?.toBase58?.()}</p>
+          <p><strong>Token Mint:</strong> {daoInfo.tokenMint?.toBase58?.()}</p>
+          <p><strong>Proposals:</strong> {daoInfo.proposalCount?.toString?.()}</p>
 
-          <div style={{ marginTop: "20px" }}>
-            <h4>Create Proposal</h4>
-            <input
-              type="text"
-              placeholder="Proposal Title"
-              value={proposalTitle}
-              onChange={(e) => setProposalTitle(e.target.value)}
-            />
-            <textarea
-              placeholder="Proposal Description"
-              value={proposalDescription}
-              onChange={(e) => setProposalDescription(e.target.value)}
-              rows={4}
-            />
-            <input
-              type="number"
-              placeholder="Proposal Amount"
-              value={proposalAmount}
-              onChange={(e) => setProposalAmount(e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Recipient Public Key"
-              value={proposalRecipient}
-              onChange={(e) => setProposalRecipient(e.target.value)}
-            />
-            <button onClick={createProposal} disabled={!wallet.connected || isLoading}>
-              {isLoading ? "Submitting..." : "Submit Proposal"}
-            </button>
-          </div>
+          <h3>Create Proposal</h3>
+          <input type="text" placeholder="Title" value={proposalTitle} onChange={(e) => setProposalTitle(e.target.value)} />
+          <textarea placeholder="Description" value={proposalDescription} onChange={(e) => setProposalDescription(e.target.value)} />
+          <input type="number" placeholder="Amount" value={proposalAmount} onChange={(e) => setProposalAmount(e.target.value)} />
+          <input type="text" placeholder="Recipient PublicKey" value={proposalRecipient} onChange={(e) => setProposalRecipient(e.target.value)} />
+          <input
+  type="datetime-local"
+  value={proposalDeadline}
+  onChange={(e) => setProposalDeadline(e.target.value)}
+  placeholder="Voting Deadline"
+/>
+          <button onClick={createProposal} disabled={isLoading}>
+            {isLoading ? "Submitting..." : "Submit Proposal"}
+          </button>
 
           <div style={{ marginTop: "30px" }}>
             <h4>All Proposals</h4>
             {proposals.length === 0 ? (
               <p>No proposals found.</p>
             ) : (
-              proposals.map((p, index) => {
-                console.log(`Proposal #${index + 1}`, p); // 👈 This logs full proposal
-                return (
-                  <div key={p.pubkey} style={{ border: "1px solid #ccc", padding: "10px", marginBottom: "10px" }}>
-                    <p><strong>Proposal #{index + 1}</strong></p>
-                    <p><strong>Title:</strong> {p.title ?? "N/A"}</p>
-                    <p><strong>Description:</strong> {p.description ?? "N/A"}</p>
-                    <p><strong>Amount:</strong> {p.amount?.toString?.() ?? "N/A"}</p>
-                    <p><strong>Recipient:</strong> {p.recipient?.toBase58?.() ?? "N/A"}</p>
-                    <p><strong>Creator Raw:</strong> {JSON.stringify(p.creator)}</p>
-                    <p><strong>Creator:</strong> {p.creator?.toBase58 ? p.creator.toBase58() : p.creator ?? "N/A"}</p>
-                  </div>
-                );
-              })
+              proposals.map((p, index) => (
+                <div key={p.pubkey} style={{ border: "1px solid #ccc", padding: "10px", marginBottom: "10px" }}>
+                  <p><strong>Proposal #{index + 1}</strong></p>
+                  <p><strong>Title:</strong> {p.title ?? "N/A"}</p>
+                  <p><strong>Description:</strong> {p.description ?? "N/A"}</p>
+                  <p><strong>Amount:</strong> {p.amount?.toString?.() ?? "N/A"}</p>
+                  <p><strong>Recipient:</strong> {p.recipient?.toBase58?.() ?? "N/A"}</p>
+                  <p><strong>Votes For:</strong> {p.votesFor?.toString?.() ?? "0"}</p>
+                  <p><strong>Votes Against:</strong> {p.votesAgainst?.toString?.() ?? "0"}</p>
+                  {!p.executed && (
+                    <>
+                      <button onClick={() => handleVote(p.pubkey, true)}>✅ Approve</button>
+                      <button onClick={() => handleVote(p.pubkey, false)}>❌ Reject</button>
+                    </>
+                  )}
+                </div>
+              ))
             )}
           </div>
-        </div>
+        </>
       )}
     </div>
   );
