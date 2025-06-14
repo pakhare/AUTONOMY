@@ -153,7 +153,7 @@
           "isSigner": false
         },
         {
-          "name": "voterTokenAccount",
+          "name": "dao",
           "isMut": true,
           "isSigner": false
         },
@@ -375,9 +375,14 @@
       "code": 6006,
       "name": "VotingPeriodExpired",
       "msg": "Voting period expired"
+    },
+    {
+      "code": 6007,
+      "name": "VotesExceedSupply",
+      "msg": "Votes exceed total supply"
     }
   ],
   "metadata": {
-    "address": "DJP29BHSSNf2peZoXqzXZpVWZSZZVrK6xrDS3NEoMK1R"
+    "address": "HbgZigj7TcGwVHs3Z8A5soSmaWEsAAdNsVXaGi5SiDV1"
   }
 }

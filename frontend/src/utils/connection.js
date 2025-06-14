@@ -25,7 +25,7 @@ const getProvider = () => {
 
 export const getProgram = () => {
   const provider = getProvider();
-  const programID = new PublicKey("DJP29BHSSNf2peZoXqzXZpVWZSZZVrK6xrDS3NEoMK1R");
+  const programID = new PublicKey("HbgZigj7TcGwVHs3Z8A5soSmaWEsAAdNsVXaGi5SiDV1");
   return new Program(idl, programID, provider);
 };
 
