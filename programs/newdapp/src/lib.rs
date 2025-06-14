@@ -2,7 +2,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount, Transfer};
 use anchor_spl::associated_token::AssociatedToken;
 
-declare_id!("DJP29BHSSNf2peZoXqzXZpVWZSZZVrK6xrDS3NEoMK1R");
+declare_id!("HbgZigj7TcGwVHs3Z8A5soSmaWEsAAdNsVXaGi5SiDV1");
+
 
 #[program]
 pub mod newdapp {
@@ -86,12 +87,28 @@ pub mod newdapp {
 
         require!(!ctx.accounts.voter_record.voted, CustomError::AlreadyVoted);
 
-        let voter_weight = ctx.accounts.voter_token_account.amount;
+        // Get the DAO to check total supply
+        let dao = &ctx.accounts.dao;
+        
+        // Assume 1 token per member for voting
+        let voter_weight = 1;
+
+        // Calculate total votes so far
+        let total_votes = proposal.votes_for.checked_add(proposal.votes_against)
+            .ok_or(CustomError::MathOverflow)?;
+        
+        // Check if adding this vote would exceed total supply
+        require!(
+            total_votes.checked_add(voter_weight).ok_or(CustomError::MathOverflow)? <= dao.total_supply,
+            CustomError::VotesExceedSupply
+        );
 
         if approve {
-            proposal.votes_for = proposal.votes_for.checked_add(voter_weight).ok_or(CustomError::MathOverflow)?;
+            proposal.votes_for = proposal.votes_for.checked_add(voter_weight)
+                .ok_or(CustomError::MathOverflow)?;
         } else {
-            proposal.votes_against = proposal.votes_against.checked_add(voter_weight).ok_or(CustomError::MathOverflow)?;
+            proposal.votes_against = proposal.votes_against.checked_add(voter_weight)
+                .ok_or(CustomError::MathOverflow)?;
         }
 
         ctx.accounts.voter_record.voted = true;
@@ -255,7 +272,7 @@ pub struct Vote<'info> {
     pub proposal: Account<'info, Proposal>,
 
     #[account(mut)]
-    pub voter_token_account: Account<'info, TokenAccount>,
+    pub dao: Account<'info, Dao>,
 
     #[account(
         init_if_needed,
@@ -316,5 +333,7 @@ pub enum CustomError {
     AlreadyVoted,
     #[msg("Voting period expired")]
     VotingPeriodExpired,
+    #[msg("Votes exceed total supply")]
+    VotesExceedSupply,
 }
 
