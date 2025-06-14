@@ -72,6 +72,21 @@ const DaoDetail = () => {
   const handleCreateProposal = async () => {
     if (!wallet.publicKey || !daoInfo) return;
     try {
+      // Validate date
+      if (!newProposal.deadline) {
+        throw new Error("Please select a deadline");
+      }
+
+      const selectedDate = new Date(newProposal.deadline);
+      const now = new Date();
+      
+      // Add 1 minute buffer to account for processing time
+      now.setMinutes(now.getMinutes() + 1);
+      
+      if (selectedDate <= now) {
+        throw new Error("Deadline must be at least 1 minute in the future");
+      }
+
       const program = getProgram();
       const daoPubkey = new PublicKey(daoInfo.pubkey);
       const proposalIndex = Number(daoInfo.proposalCount) + 1;
@@ -84,7 +99,18 @@ const DaoDetail = () => {
         program.programId
       );
 
-      const unixDeadline = Math.floor(new Date(newProposal.deadline).getTime() / 1000);
+      // Get member PDA
+      const [memberPda] = await PublicKey.findProgramAddress(
+        [
+          Buffer.from("member"),
+          daoPubkey.toBuffer(),
+          wallet.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      // Convert to Unix timestamp (seconds)
+      const unixDeadline = Math.floor(selectedDate.getTime() / 1000);
 
       await program.methods
         .createProposal(
@@ -97,6 +123,7 @@ const DaoDetail = () => {
         .accounts({
           dao: daoPubkey,
           proposal: proposalPda,
+          member: memberPda,
           authority: wallet.publicKey,
           systemProgram: SystemProgram.programId,
         })
@@ -113,6 +140,7 @@ const DaoDetail = () => {
       fetchDaoInfo();
     } catch (err) {
       console.error("Error creating proposal:", err);
+      alert(err.message || "Failed to create proposal");
     }
   };
 
@@ -162,7 +190,19 @@ const DaoDetail = () => {
           <input
             type="datetime-local"
             value={newProposal.deadline}
-            onChange={(e) => setNewProposal({ ...newProposal, deadline: e.target.value })}
+            onChange={(e) => {
+              const selectedDate = new Date(e.target.value);
+              const now = new Date();
+              now.setMinutes(now.getMinutes() + 1); // Add 1 minute buffer
+              
+              if (selectedDate > now) {
+                setNewProposal({ ...newProposal, deadline: e.target.value });
+              } else {
+                alert("Please select a date at least 1 minute in the future");
+              }
+            }}
+            min={new Date(new Date().getTime() + 60000).toISOString().slice(0, 16)} // Current time + 1 minute
+            style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
           />
           <div className="form-buttons">
             <button onClick={handleCreateProposal}>Submit</button>

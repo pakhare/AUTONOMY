@@ -249,7 +249,7 @@ pub struct AddMember<'info> {
 #[derive(Accounts)]
 #[instruction(title: String, description: String, amount: u64, recipient: Pubkey, voting_deadline: i64)]
 pub struct CreateProposal<'info> {
-    #[account(mut, has_one = authority)]
+    #[account(mut)]
     pub dao: Account<'info, Dao>,
 
     #[account(
@@ -260,6 +260,12 @@ pub struct CreateProposal<'info> {
         bump
     )]
     pub proposal: Account<'info, Proposal>,
+
+    #[account(
+        seeds = [b"member", dao.key().as_ref(), authority.key().as_ref()],
+        bump
+    )]
+    pub member: Account<'info, Member>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
