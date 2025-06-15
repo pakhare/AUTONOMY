@@ -336,6 +336,44 @@ const handleVote = async (proposalPubkeyBase58, approve) => {
   }
 };
 
+const handleExecuteProposal = async (proposalPubkeyBase58) => {
+  if (!wallet.publicKey || !daoInfo) return;
+  setIsLoading(true);
+  try {
+    const program = getProgram();
+    const proposalPubkey = new PublicKey(proposalPubkeyBase58);
+    const daoPubkey = new PublicKey(daoInfo.pubkey);
+    const tokenMint = new PublicKey(daoInfo.tokenMint);
+    const recipient = new PublicKey(proposals.find(p => p.pubkey === proposalPubkeyBase58).recipient);
+
+    // Get treasury token account
+    const treasuryTokenAccount = await getAssociatedTokenAddress(tokenMint, daoPubkey, true);
+    
+    // Get recipient token account
+    const recipientTokenAccount = await getAssociatedTokenAddress(tokenMint, recipient);
+
+    await program.methods
+      .executeProposal()
+      .accounts({
+        proposal: proposalPubkey,
+        dao: daoPubkey,
+        treasuryTokenAccount,
+        recipientTokenAccount,
+        daoAuthority: daoPubkey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .rpc();
+
+    alert("Proposal executed successfully!");
+    fetchProposals();
+  } catch (err) {
+    console.error("Error executing proposal:", err);
+    setError("Failed to execute proposal. See console.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
 
 
@@ -416,23 +454,42 @@ const handleVote = async (proposalPubkeyBase58, approve) => {
             {proposals.length === 0 ? (
               <p>No proposals found.</p>
             ) : (
-              proposals.map((p, index) => (
-                <div key={p.pubkey} style={{ border: "1px solid #ccc", padding: "10px", marginBottom: "10px" }}>
-                  <p><strong>Proposal #{index + 1}</strong></p>
-                  <p><strong>Title:</strong> {p.title ?? "N/A"}</p>
-                  <p><strong>Description:</strong> {p.description ?? "N/A"}</p>
-                  <p><strong>Amount:</strong> {p.amount?.toString?.() ?? "N/A"}</p>
-                  <p><strong>Recipient:</strong> {p.recipient?.toBase58?.() ?? "N/A"}</p>
-                  <p><strong>Votes For:</strong> {p.votesFor?.toString?.() ?? "0"}</p>
-                  <p><strong>Votes Against:</strong> {p.votesAgainst?.toString?.() ?? "0"}</p>
-                  {!p.executed && (
-                    <>
-                      <button onClick={() => handleVote(p.pubkey, true)}>✅ Approve</button>
-                      <button onClick={() => handleVote(p.pubkey, false)}>❌ Reject</button>
-                    </>
-                  )}
-                </div>
-              ))
+              proposals.map((p, index) => {
+                const totalVotes = Number(p.votesFor) + Number(p.votesAgainst);
+                const halfMembers = Math.ceil(Number(daoInfo.totalSupply) / 2);
+                const isApproved = Number(p.votesFor) > halfMembers;
+                const isRejected = Number(p.votesAgainst) > halfMembers;
+                const showExecuteButton = !p.executed && Number(p.votesFor) > Number(p.votesAgainst);
+
+                return (
+                  <div key={p.pubkey} style={{ border: "1px solid #ccc", padding: "10px", marginBottom: "10px" }}>
+                    <p><strong>Proposal #{index + 1}</strong></p>
+                    <p><strong>Title:</strong> {p.title ?? "N/A"}</p>
+                    <p><strong>Description:</strong> {p.description ?? "N/A"}</p>
+                    <p><strong>Amount:</strong> {p.amount?.toString?.() ?? "N/A"}</p>
+                    <p><strong>Recipient:</strong> {p.recipient?.toBase58?.() ?? "N/A"}</p>
+                    <p><strong>Votes For:</strong> {p.votesFor?.toString?.() ?? "0"}</p>
+                    <p><strong>Votes Against:</strong> {p.votesAgainst?.toString?.() ?? "0"}</p>
+                    <p><strong>Total Votes:</strong> {totalVotes}</p>
+                    <p><strong>Required for 50%:</strong> {halfMembers}</p>
+                    <p><strong>Status:</strong> {
+                      p.executed ? "Executed" :
+                      isApproved ? "Approved (Ready to Execute)" :
+                      isRejected ? "Rejected" :
+                      "Active"
+                    }</p>
+                    {!p.executed && (
+                      <>
+                        <button onClick={() => handleVote(p.pubkey, true)}>✅ Approve</button>
+                        <button onClick={() => handleVote(p.pubkey, false)}>❌ Reject</button>
+                        {showExecuteButton && (
+                          <button onClick={() => handleExecuteProposal(p.pubkey)}>Execute Proposal</button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </>

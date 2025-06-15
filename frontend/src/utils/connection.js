@@ -3,9 +3,8 @@ import { AnchorProvider, Program } from '@project-serum/anchor';
 import idl from '../idl/newdapp.json';
 
 const getProvider = () => {
-  const connection = new Connection("http://localhost:8899");
+  const connection = new Connection("https://api.devnet.solana.com", "processed");
 
-  // ✅ Make sure wallet is compatible with Anchor
   const wallet = {
     signTransaction: window.solana.signTransaction.bind(window.solana),
     signAllTransactions: window.solana.signAllTransactions.bind(window.solana),
@@ -25,7 +24,6 @@ const getProvider = () => {
 
 export const getProgram = () => {
   const provider = getProvider();
-  const programID = new PublicKey("HbgZigj7TcGwVHs3Z8A5soSmaWEsAAdNsVXaGi5SiDV1");
+  const programID = new PublicKey("HbgZigj7TcGwVHs3Z8A5soSmaWEsAAdNsVXaGi5SiDV1"); // Replace with your devnet program ID
   return new Program(idl, programID, provider);
 };
-

@@ -14,6 +14,7 @@ const ProposalDetail = () => {
   const [comments, setComments] = useState([]);
   const [isCreator, setIsCreator] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
+  const [isExecuted, setIsExecuted] = useState(false);
   const wallet = useWallet();
   const navigate = useNavigate();
 
@@ -122,6 +123,22 @@ const ProposalDetail = () => {
     return now <= proposal.votingDeadline.toNumber();
   };
 
+  const handleExecuteProposal = () => {
+    // Simulate execution by updating local state
+    setIsExecuted(true);
+    setProposal(prev => ({
+      ...prev,
+      executed: true
+    }));
+    
+    // Add an execution comment
+    setComments(prev => [...prev, {
+      status: "Executed",
+      comment: "Proposal has been executed successfully",
+      timestamp: new Date().toISOString()
+    }]);
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -162,8 +179,21 @@ const ProposalDetail = () => {
               <span>{proposal.votesAgainst.toString()}</span>
             </div>
             <div className="stat">
+              <label>Total Votes:</label>
+              <span>{Number(proposal.votesFor) + Number(proposal.votesAgainst)}</span>
+            </div>
+            <div className="stat">
+              <label>Required for 50%:</label>
+              <span>{Math.ceil(Number(daoInfo.totalSupply) / 2)}</span>
+            </div>
+            <div className="stat">
               <label>Status:</label>
-              <span>{proposal.executed ? "Executed" : "Active"}</span>
+              <span>{
+                isExecuted || proposal.executed ? "Executed" :
+                Number(proposal.votesFor) > Math.ceil(Number(daoInfo.totalSupply) / 2) ? "Approved (Ready to Execute)" :
+                Number(proposal.votesAgainst) > Math.ceil(Number(daoInfo.totalSupply) / 2) ? "Rejected" :
+                "Active"
+              }</span>
             </div>
             <div className="stat">
               <label>Deadline:</label>
@@ -171,13 +201,22 @@ const ProposalDetail = () => {
             </div>
           </div>
 
-          {!hasVoted && isVotingPeriodActive() && (
+          {!hasVoted && isVotingPeriodActive() && !isExecuted && !proposal.executed && (
             <div className="voting-buttons">
               <button onClick={() => handleVote(true)} className="approve-btn">
                 Approve
               </button>
               <button onClick={() => handleVote(false)} className="reject-btn">
                 Reject
+              </button>
+            </div>
+          )}
+
+          {!isExecuted && !proposal.executed && 
+           Number(proposal.votesFor) > Number(proposal.votesAgainst) && (
+            <div className="execute-button">
+              <button onClick={handleExecuteProposal} className="execute-btn">
+                Execute Proposal
               </button>
             </div>
           )}
@@ -373,6 +412,22 @@ const ProposalDetail = () => {
 
         h2 {
           margin: 0 0 1rem 0;
+        }
+
+        .execute-button {
+          margin-top: 1rem;
+        }
+        .execute-btn {
+          padding: 0.5rem 1rem;
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 1rem;
+        }
+        .execute-btn:hover {
+          background-color: #45a049;
         }
       `}</style>
     </div>
