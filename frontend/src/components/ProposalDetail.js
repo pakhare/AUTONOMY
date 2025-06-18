@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { getProgram } from "../utils/connection";
 import { PublicKey } from "@solana/web3.js";
+import "./Proposal.css";
 
 const ProposalDetail = () => {
   const { daoId, proposalId } = useParams();
@@ -167,10 +168,6 @@ const ProposalDetail = () => {
               <span>{proposal.amount.toString()}</span>
             </div>
             <div className="stat">
-              <label>Recipient:</label>
-              <span>{proposal.recipient.toBase58()}</span>
-            </div>
-            <div className="stat">
               <label>Votes For:</label>
               <span>{proposal.votesFor.toString()}</span>
             </div>
@@ -195,9 +192,18 @@ const ProposalDetail = () => {
                 "Active"
               }</span>
             </div>
+            
             <div className="stat">
               <label>Deadline:</label>
               <span>{new Date(proposal.votingDeadline.toNumber() * 1000).toLocaleString()}</span>
+            </div>
+            <br/>
+            <br/>
+            <br/>
+
+            <div className="stat">
+              <label>Recipient Address:</label>
+              <span>{proposal.recipient.toBase58()}</span>
             </div>
           </div>
 
@@ -267,169 +273,6 @@ const ProposalDetail = () => {
         </div>
       </div>
 
-      <style>{`
-        .proposal-detail {
-          padding: 2rem;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
-        .proposal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-        }
-
-        .back-btn {
-          padding: 0.5rem 1rem;
-          background-color: #666;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .proposal-content {
-          display: grid;
-          gap: 2rem;
-        }
-
-        .proposal-info {
-          background: #f5f5f5;
-          padding: 2rem;
-          border-radius: 8px;
-        }
-
-        .proposal-stats {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 1rem;
-          margin: 1.5rem 0;
-        }
-
-        .stat {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .stat label {
-          font-weight: bold;
-          color: #666;
-        }
-
-        .voting-buttons {
-          display: flex;
-          gap: 1rem;
-          margin-top: 1.5rem;
-        }
-
-        .approve-btn,
-        .reject-btn {
-          padding: 0.75rem 1.5rem;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-weight: bold;
-        }
-
-        .approve-btn {
-          background-color: #4CAF50;
-          color: white;
-        }
-
-        .reject-btn {
-          background-color: #f44336;
-          color: white;
-        }
-
-        .status-update {
-          background: #f5f5f5;
-          padding: 2rem;
-          border-radius: 8px;
-        }
-
-        .status-select {
-          width: 100%;
-          padding: 0.5rem;
-          margin-bottom: 1rem;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-        }
-
-        .status-comment {
-          width: 100%;
-          padding: 0.5rem;
-          margin-bottom: 1rem;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          min-height: 100px;
-        }
-
-        .update-btn {
-          padding: 0.75rem 1.5rem;
-          background-color: #2196F3;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .status-history {
-          background: #f5f5f5;
-          padding: 2rem;
-          border-radius: 8px;
-        }
-
-        .status-update-item {
-          border-bottom: 1px solid #ddd;
-          padding: 1rem 0;
-        }
-
-        .status-header {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 0.5rem;
-        }
-
-        .status {
-          font-weight: bold;
-          color: #2196F3;
-        }
-
-        .timestamp {
-          color: #666;
-        }
-
-        .comment {
-          margin: 0;
-          color: #333;
-        }
-
-        h1 {
-          margin: 0;
-        }
-
-        h2 {
-          margin: 0 0 1rem 0;
-        }
-
-        .execute-button {
-          margin-top: 1rem;
-        }
-        .execute-btn {
-          padding: 0.5rem 1rem;
-          background-color: #4CAF50;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 1rem;
-        }
-        .execute-btn:hover {
-          background-color: #45a049;
-        }
-      `}</style>
     </div>
   );
 };

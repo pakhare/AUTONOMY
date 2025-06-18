@@ -1,0 +1,100 @@
+.dao-detail {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dao-header {
+    display: flex;
+    flex-wrap: wrap;
+    width: 90%;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.proposal-btns{
+    width: 60%;
+}
+.proposal-btns button {
+    padding: 0.75rem 1.5rem;
+    background-color: #4CAF50;
+    width: 12vw;
+    margin-left: 3%;
+    float: right;
+    color: black;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.new-proposal-form {
+    width: 70%;
+    padding: 4rem;
+    padding-left: 9%;
+    padding-right: 1%;
+    padding-top: 3%;
+    margin-left: 3%;
+    margin-top: 5%;
+    margin-bottom: 2rem;
+    line-height: 2.3;
+    border: 1px solid #ddd;
+    border-radius: 30px;
+    /* box-shadow: 7px 7px 12px rgba(194, 192, 192, 0.1); */
+}
+
+.new-proposal-form input,
+.new-proposal-form textarea {
+    background-color: black;
+    color: white;
+    width: 85%;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 9px;
+}
+.new-proposal-form label{
+    font-size: 20px;
+}
+
+.form-buttons {
+    display: flex;
+    gap: 26rem;
+}
+
+.proposal-card {
+    padding: 1.9rem;
+    border: 1px solid #ddd;
+    border-radius: 30px;
+    margin-bottom: 3rem;
+    width:85%;
+    cursor: pointer;
+    transition: transform 0.4s;
+}
+
+.proposal-card:hover {
+    /* transform: translateY(-4px); */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    scale: 1.02;
+    box-shadow: 1px 1px 12px grey;
+}
+
+.proposal-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    color: #666;
+}
+
+h1{
+    margin: 0;
+}
+
+h2{
+    margin-bottom: 1rem;
+}
+
+h3 {
+    margin: 0 0 0.5rem 0;
+}
+      

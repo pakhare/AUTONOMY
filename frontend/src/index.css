@@ -5,7 +5,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
+  background-color: black;
+  color: white;
 }
 
 code {
@@ -20,18 +21,19 @@ code {
 }
 
 .app-header {
-  background-color: white;
+  background-color: black;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 4px rgba(251, 247, 247, 0.1);
+  border-bottom: 1px solid #504f4f;
 }
 
 .app-header h1 {
   margin: 0;
   font-size: 1.5rem;
-  color: #333;
+  color: white;
 }
 
 .app-content {

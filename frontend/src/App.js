@@ -15,7 +15,7 @@ function App() {
       <Router>
         <div className="app-container">
           <header className="app-header">
-            <h1>DAO Platform</h1>
+            <h1><a href="/">AUTONOMY</a></h1>
             <WalletMultiButton />
           </header>
           <main className="app-content">

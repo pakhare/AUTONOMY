@@ -1,5 +1,7 @@
 ""// ./components/InitializeDao.js
+import { Navigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
+import "./Initialize.css"
 import { getProgram } from "../utils/connection";
 import {
   PublicKey,
@@ -41,6 +43,40 @@ const InitializeDao = () => {
   const [proposalDeadline, setProposalDeadline] = useState("");
   
   const [myDaos, setMyDaos] = useState([]);
+
+  const [redirect, setRedirect] = useState(false);
+  /*dao creation steps*/
+  const [stage, setStage] = useState(1);
+  const [formErrors, setFormErrors] = useState({});
+
+  const handleNext = () => {
+      // Step 1: DAO Name
+      if (stage === 1 && !daoName.trim()) {
+        setFormErrors({ daoName: "DAO Name is required." });
+        return;
+      }
+      // Step 2: Token Supply
+      if (stage === 2 && (!supply.trim() || isNaN(Number(supply)) || Number(supply) <= 0)) {
+        setFormErrors({ supply: "Token Supply is required." });
+        return;
+      }
+      // Step 3: Member List
+      if (stage === 3 && !memberList.trim()) {
+        setFormErrors({ memberList: "Member list is required." });
+        return;
+      }
+      setFormErrors({});
+      setStage(stage + 1);
+    };
+
+  const handleBack = () => {
+    setFormErrors({});
+    setStage(stage - 1);
+  };
+
+  //
+
+
 
 const fetchMyDaos = async () => {
   if (!wallet.publicKey) return;
@@ -203,6 +239,7 @@ const fetchMyDaos = async () => {
 
       const daoAccount = await program.account.dao.fetch(daoPda);
       setDaoInfo({ ...daoAccount, pubkey: daoPda.toBase58() });
+      setRedirect(true); 
     } catch (error) {
       console.error("Error creating DAO:", error);
       setError("Failed to create DAO. See console.");
@@ -375,125 +412,103 @@ const handleExecuteProposal = async (proposalPubkeyBase58) => {
 };
 
 
-
+    if (redirect) return <Navigate to="/" replace />;
 
   return (
-    <div style={{ maxWidth: "600px", margin: "auto", padding: "20px" }}>
-      <h2>Initialize DAO</h2>
-      <input type="text" placeholder="DAO Name" value={daoName} onChange={(e) => setDaoName(e.target.value)} />
-      <input type="number" placeholder="Token Supply" value={supply} onChange={(e) => setSupply(e.target.value)} />
-      <textarea
-        placeholder="Comma-separated member public keys"
-        value={memberList}
-        onChange={(e) => setMemberList(e.target.value)}
-        style={{ width: "100%", height: "60px", marginTop: "10px" }}
-      />
-      <button onClick={initializeDao} disabled={isLoading}>
-        {isLoading ? "Creating..." : "Create DAO"}
-      </button>
-      
+    
+  <div className="initialize">
+    <h1>Step  {stage}</h1>
+    {stage === 1 && (
+      <div className="inputFields">
+        <span className="headerText">What is the name of your DAO?</span>
+        <p style={{fontSize:'18px'}}>It's best to choose a descriptive, memorable name for you and your members.</p><br/>
+        <input
+          type="text"
+          placeholder="   DAO Name"
+          value={daoName}
+          onChange={(e) => setDaoName(e.target.value)}
+        />
+        {formErrors.daoName && (
+          <div style={{ color: "red", marginBottom: 4 }}>{formErrors.daoName}</div>
+        )}
+        <br/>
+        <button onClick={handleNext}>Next</button>
+      </div>
+    )}
+    {stage === 2 && (
+      <div className="inputFields">
+        <span className="headerText">What is the minimum number of community tokens needed to manage this DAO?</span>
+        <p style={{fontSize:'18px'}}>A user will need at least this many community tokens to edit the DAO</p><br/>
+        <input
+          type="number"
+          placeholder="  Token Supply"
+          value={supply}
+          onChange={(e) => setSupply(e.target.value)}
+        />
+        {formErrors.supply && (
+          <div style={{ color: "red", marginBottom: 4 }}>{formErrors.supply}</div>
+        )}
+        <div className="buttonContainer">
+          <button onClick={handleBack}>Back</button>
+          <button onClick={handleNext}>Next</button>
+        </div>
+      </div>
+    )}
+    {stage === 3 && (
+      <div>
+        <span className="headerText">Invite members</span>
+        <p style={{fontSize:'18px'}}>Add Solana wallet addressses, separated by a comma or line-break.</p>
+        <textarea
+          placeholder="Comma-separated member public keys"
+          value={memberList}
+          onChange={(e) => setMemberList(e.target.value)}
+          style={{ width: "100%", height: "17vh", marginTop: "10px" }}
+        />
+        {formErrors.memberList && (
+          <div style={{ color: "red", marginBottom: 4 }}>{formErrors.memberList}</div>
+        )}
+        <button onClick={handleBack}>Back</button>
+        <button onClick={handleNext}>Next</button>
+      </div>
+    )}
+    {stage === 4 && (
+      <div>
+        <h2>Review DAO Details</h2>
+        <div className="reviewCard">
+          <div><b>Name:</b> {daoName}</div>
+          <div><b>Supply:</b> {supply}</div>
+          <div><b>Members:</b> {memberList}</div>
+        </div>
+        <button onClick={handleBack}>Back</button>
+        <button onClick={initializeDao} disabled={isLoading}>
+          {isLoading ? "Creating..." : "Create DAO"}
+        </button>
+        {error && <div style={{ color: "red", marginTop: 8 }}>{error}</div>}
+      </div>
+    )}
+
+
       <hr style={{ margin: "20px 0" }} />
-<button onClick={fetchMyDaos} disabled={!wallet.publicKey}>
-  View My DAOs
-</button>
+      <button onClick={fetchMyDaos} disabled={!wallet.publicKey}>
+        View My DAOs
+      </button>
 
 {myDaos.length > 0 && (
-  <div style={{ marginTop: "20px" }}>
+  <div className="my-daos">
     <h3>My DAOs</h3>
     {myDaos.map(({ publicKey, account }) => (
       <div
         key={publicKey.toBase58()}
-        style={{
-          border: "1px solid gray",
-          marginBottom: "10px",
-          padding: "10px",
-          borderRadius: "8px",
-          background: "#f9f9f9",
-        }}
-      >
+        className="dao-card">
         <p><strong>Name:</strong> {account.daoName}</p>
-        <p><strong>Authority:</strong> {account.authority.toBase58()}</p>
-        <p><strong>Proposals:</strong> {account.proposalCount.toString()}</p>
-        <p><strong>Token Mint:</strong> {account.tokenMint.toBase58()}</p>
-        <p><strong>DAO Pubkey:</strong> {publicKey.toBase58()}</p>
+        <p><strong>Authority:</strong>   {account.authority.toBase58()}</p>
+        <p><strong>Proposals:</strong>   {account.proposalCount.toString()}</p>
+        <p><strong>Token Mint:</strong>   {account.tokenMint.toBase58()}</p>
+        <p><strong>DAO Pubkey:</strong>   {publicKey.toBase58()}</p>
       </div>
     ))}
   </div>
 )}
-
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      
-      
-
-      {daoInfo && (
-        <>
-          <h3>DAO Info</h3>
-          <p><strong>Name:</strong> {daoInfo.daoName}</p>
-          <p><strong>Authority:</strong> {daoInfo.authority?.toBase58?.()}</p>
-          <p><strong>Token Mint:</strong> {daoInfo.tokenMint?.toBase58?.()}</p>
-          <p><strong>Proposals:</strong> {daoInfo.proposalCount?.toString?.()}</p>
-
-          <h3>Create Proposal</h3>
-          <input type="text" placeholder="Title" value={proposalTitle} onChange={(e) => setProposalTitle(e.target.value)} />
-          <textarea placeholder="Description" value={proposalDescription} onChange={(e) => setProposalDescription(e.target.value)} />
-          <input type="number" placeholder="Amount" value={proposalAmount} onChange={(e) => setProposalAmount(e.target.value)} />
-          <input type="text" placeholder="Recipient PublicKey" value={proposalRecipient} onChange={(e) => setProposalRecipient(e.target.value)} />
-          <input
-  type="datetime-local"
-  value={proposalDeadline}
-  onChange={(e) => setProposalDeadline(e.target.value)}
-  placeholder="Voting Deadline"
-/>
-          <button onClick={createProposal} disabled={isLoading}>
-            {isLoading ? "Submitting..." : "Submit Proposal"}
-          </button>
-
-          <div style={{ marginTop: "30px" }}>
-            <h4>All Proposals</h4>
-            {proposals.length === 0 ? (
-              <p>No proposals found.</p>
-            ) : (
-              proposals.map((p, index) => {
-                const totalVotes = Number(p.votesFor) + Number(p.votesAgainst);
-                const halfMembers = Math.ceil(Number(daoInfo.totalSupply) / 2);
-                const isApproved = Number(p.votesFor) > halfMembers;
-                const isRejected = Number(p.votesAgainst) > halfMembers;
-                const showExecuteButton = !p.executed && Number(p.votesFor) > Number(p.votesAgainst);
-
-                return (
-                  <div key={p.pubkey} style={{ border: "1px solid #ccc", padding: "10px", marginBottom: "10px" }}>
-                    <p><strong>Proposal #{index + 1}</strong></p>
-                    <p><strong>Title:</strong> {p.title ?? "N/A"}</p>
-                    <p><strong>Description:</strong> {p.description ?? "N/A"}</p>
-                    <p><strong>Amount:</strong> {p.amount?.toString?.() ?? "N/A"}</p>
-                    <p><strong>Recipient:</strong> {p.recipient?.toBase58?.() ?? "N/A"}</p>
-                    <p><strong>Votes For:</strong> {p.votesFor?.toString?.() ?? "0"}</p>
-                    <p><strong>Votes Against:</strong> {p.votesAgainst?.toString?.() ?? "0"}</p>
-                    <p><strong>Total Votes:</strong> {totalVotes}</p>
-                    <p><strong>Required for 50%:</strong> {halfMembers}</p>
-                    <p><strong>Status:</strong> {
-                      p.executed ? "Executed" :
-                      isApproved ? "Approved (Ready to Execute)" :
-                      isRejected ? "Rejected" :
-                      "Active"
-                    }</p>
-                    {!p.executed && (
-                      <>
-                        <button onClick={() => handleVote(p.pubkey, true)}>✅ Approve</button>
-                        <button onClick={() => handleVote(p.pubkey, false)}>❌ Reject</button>
-                        {showExecuteButton && (
-                          <button onClick={() => handleExecuteProposal(p.pubkey)}>Execute Proposal</button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </>
-      )}
     </div>
   );
 };

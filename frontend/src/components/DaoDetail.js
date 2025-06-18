@@ -4,6 +4,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { getProgram } from "../utils/connection";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import BN from "bn.js";
+import "./DaoDetail.css";
 
 const DaoDetail = () => {
   const { daoId } = useParams();
@@ -156,37 +157,48 @@ const DaoDetail = () => {
     <div className="dao-detail">
       <div className="dao-header">
         <h1>{daoInfo.daoName}</h1>
-        <button onClick={() => setShowNewProposal(true)} className="new-proposal-btn">
+        <div className="proposal-btns">
+          <button>
+          Proposal Updates
+        </button>
+        <button onClick={() => setShowNewProposal(true)} >
           New Proposal
         </button>
+        </div>
+
       </div>
 
       {showNewProposal && (
         <div className="new-proposal-form">
           <h2>Create New Proposal</h2>
+          <label>Enter a title for proposal</label><br/><br/>
           <input
             type="text"
-            placeholder="Title"
+            placeholder=" Proposal Title"
             value={newProposal.title}
             onChange={(e) => setNewProposal({ ...newProposal, title: e.target.value })}
           />
+          <br/><label>Describe your proposal</label>
           <textarea
             placeholder="Description"
             value={newProposal.description}
             onChange={(e) => setNewProposal({ ...newProposal, description: e.target.value })}
           />
+          <br/><label>Enter the amount</label>
           <input
             type="number"
             placeholder="Amount"
             value={newProposal.amount}
             onChange={(e) => setNewProposal({ ...newProposal, amount: e.target.value })}
           />
+          <br/><label>Enter wallet address of Recipient</label>
           <input
             type="text"
             placeholder="Recipient PublicKey"
             value={newProposal.recipient}
             onChange={(e) => setNewProposal({ ...newProposal, recipient: e.target.value })}
           />
+          <br/><label>End Date and Time of Proposal</label>
           <input
             type="datetime-local"
             value={newProposal.deadline}
@@ -202,17 +214,17 @@ const DaoDetail = () => {
               }
             }}
             min={new Date(new Date().getTime() + 60000).toISOString().slice(0, 16)} // Current time + 1 minute
-            style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+            style={{ color:'white', padding: '8px', marginBottom: '10px' }}
           />
           <div className="form-buttons">
-            <button onClick={handleCreateProposal}>Submit</button>
             <button onClick={() => setShowNewProposal(false)}>Cancel</button>
+            <button onClick={handleCreateProposal}>Submit</button>
           </div>
         </div>
       )}
 
       <div className="proposals-list">
-        <h2>Proposals</h2>
+        <h2 style={{margin:' 3% 0%'}}>Proposals</h2>
         {proposals.length === 0 ? (
           <p>No proposals yet.</p>
         ) : (
@@ -234,84 +246,6 @@ const DaoDetail = () => {
           ))
         )}
       </div>
-
-      <style>{`
-        .dao-detail {
-          padding: 2rem;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
-        .dao-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-        }
-
-        .new-proposal-btn {
-          padding: 0.75rem 1.5rem;
-          background-color: #4CAF50;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .new-proposal-form {
-          background: #f5f5f5;
-          padding: 2rem;
-          border-radius: 8px;
-          margin-bottom: 2rem;
-        }
-
-        .new-proposal-form input,
-        .new-proposal-form textarea {
-          width: 100%;
-          margin-bottom: 1rem;
-          padding: 0.5rem;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-        }
-
-        .form-buttons {
-          display: flex;
-          gap: 1rem;
-        }
-
-        .proposal-card {
-          padding: 1.5rem;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          margin-bottom: 1rem;
-          cursor: pointer;
-          transition: transform 0.2s;
-        }
-
-        .proposal-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .proposal-stats {
-          display: flex;
-          gap: 1rem;
-          margin-top: 1rem;
-          color: #666;
-        }
-
-        h1 {
-          margin: 0;
-        }
-
-        h2 {
-          margin-bottom: 1rem;
-        }
-
-        h3 {
-          margin: 0 0 0.5rem 0;
-        }
-      `}</style>
     </div>
   );
 };

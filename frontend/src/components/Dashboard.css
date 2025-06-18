@@ -1,0 +1,102 @@
+/* info below nav */
+.home{
+  margin-top: 3%;
+  padding: 4%;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  width: 50%;
+  height: 50vh;
+  color: white;
+  line-height: 1.7;
+}
+
+#h1{
+  font-size: 55px;
+}
+#h2{
+  font-size: 20px;
+}
+
+
+/*dashboard*/
+.dashboard {
+  padding: 2%;
+  max-width: 1200px;
+  margin: 4%;
+  min-height:30vh ;
+  height: auto;
+  border-radius: 7px;
+  box-shadow: 1px 1px 6px white;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  margin-left: 5%;
+}
+.dashboard button{
+  margin-top: 1%;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 18px;
+  border-radius: 7px;
+  width: 12vw;
+  height: 7vh;
+  margin-left: 1%;
+  transition-duration: 0.4s;
+}
+hr{
+  margin-bottom: 3%;
+}
+
+
+.dashboard-sections {
+  /* display: flex; */
+  /* flex-wrap: wrap; */
+  overflow: hidden;
+  margin-left: 5%;
+}
+
+.dashboard-sections section{
+  margin-right: 7%;
+  margin-top: 4%;
+}
+.dao-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.dao-card {
+  padding: 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.dao-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.dashboard-sections p {
+  margin: 0.25rem 0;
+  font-size: 23px;
+  color: #666;
+}
