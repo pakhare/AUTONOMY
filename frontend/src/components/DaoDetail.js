@@ -153,14 +153,13 @@ const DaoDetail = () => {
             <input type="text" placeholder="Recipient PublicKey" value={newProposal.recipient} onChange={(e) => setNewProposal({ ...newProposal, recipient: e.target.value })} />
             {/* <input type="datetime-local" value={newProposal.deadline} onChange={(e) => setNewProposal({ ...newProposal, deadline: e.target.value })} /> */}
             <DatePicker
-  selected={new Date(newProposal.deadline)}
+  selected={newProposal.deadline ? new Date(newProposal.deadline) : null}
   onChange={(date) => setNewProposal({ ...newProposal, deadline: date })}
   showTimeSelect
-  timeFormat="HH:mm"
-  timeIntervals={15}
   dateFormat="Pp"
   placeholderText="Select deadline"
 />
+
             <br></br><br></br>
             <div className="form-buttons">
               <button onClick={() => setShowNewProposal(false)}>Cancel</button>

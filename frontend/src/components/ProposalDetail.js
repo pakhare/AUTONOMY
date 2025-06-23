@@ -233,17 +233,13 @@ const ProposalDetail = () => {
               <label>Deadline:</label>
               <span>{new Date(proposal.votingDeadline.toNumber() * 1000).toLocaleString()}</span>
             </div>
-            <div className="stat">
-          
-          </div>
-            <br/>
-            <br/>
-            <br/>
 
+  
             <div className="stat">
-              <label>Recipient Address:</label>
-              <span>{proposal.recipient.toBase58()}</span>
-            </div>
+  <label>Recipient Address:</label>
+  <span style={{ display: "block" }}>{proposal.recipient.toBase58()}</span>
+</div>
+
           </div>
 
           {!hasVoted && isVotingPeriodActive() && !isExecuted && !proposal.executed && (
@@ -267,7 +263,7 @@ const ProposalDetail = () => {
           )}
         </div>
 
-        <div className="status-history">
+        {/* <div className="status-history">
           <h2>Status History</h2>
           {comments.length === 0 ? (
             <p>No status updates yet.</p>
@@ -284,7 +280,7 @@ const ProposalDetail = () => {
               </div>
             ))
           )}
-        </div>
+        </div> */}
       </div>
       <div className="status-history">
       <ProposalUpdate proposal={proposal} daoInfo={daoInfo} />

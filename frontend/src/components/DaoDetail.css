@@ -1,3 +1,7 @@
+.dao-detail-container{
+    width: 80vh;
+}
+
 .dao-detail {
     padding: 2rem;
     max-width: 1200px;
@@ -84,7 +88,7 @@
     display: flex;
     gap: 1rem;
     margin-top: 1rem;
-    color: #666;
+    color: #e2e2e2;
 }
 
 h1{
@@ -109,5 +113,15 @@ textarea::placeholder {
   input::placeholder {
     color: white; /* Replace with your desired color */
     opacity: 0.6; /* Optional: Ensures full opacity */
+  }
+  
+
+  .dao-sidebar ul {
+    list-style: number;
+    /* padding: 0; */
+  }
+  
+  .dao-sidebar ul li {
+    margin-bottom: 15px;
   }
   

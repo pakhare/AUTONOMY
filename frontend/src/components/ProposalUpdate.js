@@ -39,15 +39,19 @@ const ProposalUpdate = ({ proposal, daoInfo }) => {
 
   useEffect(() => {
     if (!proposal?.pubkey) return;
-
-    fetch(`${process.env.REACT_APP_API_URL}/status/${proposal.pubkey}`)
-      .then(res => res.ok && res.json())
-      .then(data => {
-        if (data?.uploads) setUploadHistory(data.uploads);
-      })
-      .catch(() => {});
-  }, [proposal]);
-
+  
+    const fetchStatus = () => {
+      fetch(`${process.env.REACT_APP_API_URL}/status/${proposal.pubkey}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.uploads) setUploadHistory(data.uploads);
+        })
+        .catch(() => {});
+    };
+  
+    fetchStatus();
+  }, [proposal?.pubkey]);
+  
   const handleUpload = async () => {
     if (!selectedFile) return;
     setIsUploading(true);
@@ -64,6 +68,7 @@ const ProposalUpdate = ({ proposal, daoInfo }) => {
       });
 
       const { signedUrl, fileUrl } = await signRes.json();
+      // console.log("Signed URL:", signedUrl);
       if (!signedUrl || !fileUrl) throw new Error("Failed to get signed URL");
 
       const uploadRes = await fetch(signedUrl, {
