@@ -6,3 +6,4 @@ node_modules
 test-ledger
 .yarn
 frontend/node_modules
+backend/.env
