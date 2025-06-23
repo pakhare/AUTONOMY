@@ -23,7 +23,7 @@ router.post("/sign-s3-url", async (req, res) => {
       Key,
       Expires: 60,
       ContentType: fileType,
-      ACL: "public-read",
+      // ACL: "public-read",
     });
     const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${Key}`;
     return res.json({ signedUrl, fileUrl });

@@ -239,7 +239,9 @@ const fetchMyDaos = async () => {
 
       const daoAccount = await program.account.dao.fetch(daoPda);
       setDaoInfo({ ...daoAccount, pubkey: daoPda.toBase58() });
-      setRedirect(true); 
+      // setRedirect(true); 
+      setRedirect(daoPda.toBase58());
+
     } catch (error) {
       console.error("Error creating DAO:", error);
       setError("Failed to create DAO. See console.");
@@ -412,7 +414,9 @@ const handleExecuteProposal = async (proposalPubkeyBase58) => {
 };
 
 
-    if (redirect) return <Navigate to="/" replace />;
+    // if (redirect) return <Navigate to="/" replace />;
+    if (redirect) return <Navigate to={`/dao/${redirect}`} replace />;
+
 
   return (
     
@@ -424,7 +428,7 @@ const handleExecuteProposal = async (proposalPubkeyBase58) => {
         <p style={{fontSize:'18px'}}>It's best to choose a descriptive, memorable name for you and your members.</p><br/>
         <input
           type="text"
-          placeholder="   DAO Name"
+          placeholder="DAO Name"
           value={daoName}
           onChange={(e) => setDaoName(e.target.value)}
         />
@@ -432,7 +436,7 @@ const handleExecuteProposal = async (proposalPubkeyBase58) => {
           <div style={{ color: "red", marginBottom: 4 }}>{formErrors.daoName}</div>
         )}
         <br/>
-        <button onClick={handleNext}>Next</button>
+        <button onClick={handleNext}>NEXT</button>
       </div>
     )}
     {stage === 2 && (
@@ -449,8 +453,8 @@ const handleExecuteProposal = async (proposalPubkeyBase58) => {
           <div style={{ color: "red", marginBottom: 4 }}>{formErrors.supply}</div>
         )}
         <div className="buttonContainer">
-          <button onClick={handleBack}>Back</button>
-          <button onClick={handleNext}>Next</button>
+          <button onClick={handleBack}>BACK</button>
+          <button onClick={handleNext}>NEXT</button>
         </div>
       </div>
     )}
@@ -462,13 +466,13 @@ const handleExecuteProposal = async (proposalPubkeyBase58) => {
           placeholder="Comma-separated member public keys"
           value={memberList}
           onChange={(e) => setMemberList(e.target.value)}
-          style={{ width: "100%", height: "17vh", marginTop: "10px" }}
+          style={{ width: "90%", height: "17vh", marginTop: "10px" }}
         />
         {formErrors.memberList && (
           <div style={{ color: "red", marginBottom: 4 }}>{formErrors.memberList}</div>
         )}
-        <button onClick={handleBack}>Back</button>
-        <button onClick={handleNext}>Next</button>
+        <button onClick={handleBack}>BACK</button>
+        <button onClick={handleNext}>NEXT</button>
       </div>
     )}
     {stage === 4 && (
@@ -479,7 +483,7 @@ const handleExecuteProposal = async (proposalPubkeyBase58) => {
           <div><b>Supply:</b> {supply}</div>
           <div><b>Members:</b> {memberList}</div>
         </div>
-        <button onClick={handleBack}>Back</button>
+        <button onClick={handleBack}>BACK</button>
         <button onClick={initializeDao} disabled={isLoading}>
           {isLoading ? "Creating..." : "Create DAO"}
         </button>
@@ -488,10 +492,10 @@ const handleExecuteProposal = async (proposalPubkeyBase58) => {
     )}
 
 
-      <hr style={{ margin: "20px 0" }} />
+      {/* <hr style={{ margin: "20px 0" }} />
       <button onClick={fetchMyDaos} disabled={!wallet.publicKey}>
         View My DAOs
-      </button>
+      </button> */}
 
 {myDaos.length > 0 && (
   <div className="my-daos">

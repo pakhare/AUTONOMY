@@ -1,13 +1,32 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Bitter', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: black;
+  background-color: rgb(32, 22, 37);
+  background-image: url('./landing-hero-desktop.webp');
+  background-repeat: no-repeat;
+  background-position: top center;
+  /* background-size: cover; */
+  background-attachment: fixed;
   color: white;
+  position: relative;
+  min-height: 100vh;
+  /* overflow: hidden; */
 }
+
+.blur-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(4px);
+  z-index: 1;
+  pointer-events: none; /* Allows clicks to pass through */
+}
+
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
@@ -21,7 +40,7 @@ code {
 }
 
 .app-header {
-  background-color: black;
+  background-color: rgba(33, 25, 46, 0.411);
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
@@ -36,15 +55,23 @@ code {
   color: white;
 }
 
+.app-header a {
+  color: white;
+}
+
 .app-content {
   flex: 1;
   padding: 2rem;
+    max-width: 1200px; /* You can adjust this value to your liking */
+    margin: 0 auto;
+  
 }
 
 /* Button styles */
 button {
   cursor: pointer;
   font-family: inherit;
+  /* color: white; */
 }
 
 button:disabled {

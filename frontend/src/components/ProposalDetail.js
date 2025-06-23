@@ -4,6 +4,8 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { getProgram } from "../utils/connection";
 import { PublicKey } from "@solana/web3.js";
 import "./Proposal.css";
+import ProposalUpdate from "./ProposalUpdate";
+
 
 const ProposalDetail = () => {
   const { daoId, proposalId } = useParams();
@@ -40,6 +42,20 @@ const ProposalDetail = () => {
       setProposal({ ...proposalAccount, pubkey: proposalPubkey.toBase58() });
       setIsCreator(proposalAccount.creator.toBase58() === wallet.publicKey.toBase58());
 
+      const members = await program.account.member.all([
+        {
+          memcmp: {
+            offset: 8, // Discriminator is 8 bytes, dao field starts right after
+            bytes: daoPubkey.toBase58(),
+          },
+        },
+      ]);
+      
+      const totalMembers = members.length;
+      
+    
+      console.log("members", totalMembers);
+      setDaoInfo((prev) => ({ ...prev, totalMembers }));
       // Check if user has voted
       const [voterRecordPda] = await PublicKey.findProgramAddress(
         [
@@ -179,24 +195,47 @@ const ProposalDetail = () => {
               <label>Total Votes:</label>
               <span>{Number(proposal.votesFor) + Number(proposal.votesAgainst)}</span>
             </div>
-            <div className="stat">
-              <label>Required for 50%:</label>
-              <span>{Math.ceil(Number(daoInfo.totalSupply) / 2)}</span>
-            </div>
+
             <div className="stat">
               <label>Status:</label>
               <span>{
-                isExecuted || proposal.executed ? "Executed" :
-                Number(proposal.votesFor) > Math.ceil(Number(daoInfo.totalSupply) / 2) ? "Approved (Ready to Execute)" :
-                Number(proposal.votesAgainst) > Math.ceil(Number(daoInfo.totalSupply) / 2) ? "Rejected" :
-                "Active"
-              }</span>
+              isExecuted || proposal.executed
+              ? "Executed"
+            : (() => {
+            const now = Date.now() / 1000;
+            const deadline = Number(proposal.votingDeadline.toNumber());
+            const votesFor = Number(proposal.votesFor);
+            const votesAgainst = Number(proposal.votesAgainst);
+            const totalVotes = votesFor + votesAgainst;
+            const totalMembers = daoInfo.totalMembers || 0;
+            const quorumRequired = Math.ceil(totalMembers * 0.6); 
+            
+            if (now < deadline && totalVotes < totalMembers) {
+              return "Active";
+            }
+            
+            if (totalVotes >= quorumRequired || totalVotes === totalMembers) {
+              if (votesFor > totalVotes / 2) {
+                return "Approved";
+              } else {
+                return "Rejected";
+              }
+            }
+            
+            return "Quorum Not Met";
+      })()
+  }
+</span>
+
             </div>
             
             <div className="stat">
               <label>Deadline:</label>
               <span>{new Date(proposal.votingDeadline.toNumber() * 1000).toLocaleString()}</span>
             </div>
+            <div className="stat">
+          
+          </div>
             <br/>
             <br/>
             <br/>
@@ -228,31 +267,6 @@ const ProposalDetail = () => {
           )}
         </div>
 
-        {isCreator && (
-          <div className="status-update">
-            <h2>Update Status</h2>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="status-select"
-            >
-              <option value="">Select Status</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-              <option value="Blocked">Blocked</option>
-            </select>
-            <textarea
-              placeholder="Add a comment about the status..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="status-comment"
-            />
-            <button onClick={handleStatusUpdate} className="update-btn">
-              Update Status
-            </button>
-          </div>
-        )}
-
         <div className="status-history">
           <h2>Status History</h2>
           {comments.length === 0 ? (
@@ -271,6 +285,9 @@ const ProposalDetail = () => {
             ))
           )}
         </div>
+      </div>
+      <div className="status-history">
+      <ProposalUpdate proposal={proposal} daoInfo={daoInfo} />
       </div>
 
     </div>

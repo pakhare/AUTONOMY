@@ -9,10 +9,11 @@ import "./Dashboard.css";
 const Dashboard = () => {
   const [createdDaos, setCreatedDaos] = useState([]);
   const [memberDaos, setMemberDaos] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const wallet = useWallet();
   const navigate = useNavigate();
 
+  // Fetch DAOs when wallet connects
   useEffect(() => {
     if (wallet.publicKey) {
       fetchDaos();
@@ -20,6 +21,7 @@ const Dashboard = () => {
   }, [wallet.publicKey]);
 
   const fetchDaos = async () => {
+    setIsLoading(true);
     try {
       const program = getProgram();
       const allDaos = await program.account.dao.all();
@@ -35,22 +37,14 @@ const Dashboard = () => {
         );
 
         let isMember = false;
-
         try {
           await program.account.member.fetch(memberPda);
-          isMember = true;// User is a member
-        } catch (_) {
-          // Not a member
-        }
+          isMember = true;
+        } catch (_) {}
 
         const isCreator = dao.account.authority.toBase58() === wallet.publicKey.toBase58();
-
-        if (isCreator) {
-          created.push(dao);
-        } else if (isMember) {
-          member.push(dao);
-        }
-
+        if (isCreator) created.push(dao);
+        else if (isMember) member.push(dao);
       }
 
       setCreatedDaos(created);
@@ -71,76 +65,87 @@ const Dashboard = () => {
     navigate(`/dao/${dao.publicKey.toBase58()}`);
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <>
-    <div className='home'>
-        <div id="h1">
-          Helping You To Create Your Community On Solana
-        </div>
+      {/* Static text always visible */}
+      <div className="home">
+        <div id="h1">Helping You To Create Your Community On Solana</div>
+        <br></br>
         <div id="h2">
-          <p>Create Decentrallied Autonomous Organizations</p>
-          <p>Keep Members Engaged with features like Proposal Creation and Voting</p>
+          <h2>Create Decentralized Autonomous Organizations</h2>
+          <h2>Keep Members Engaged with features like Proposal Creation and Voting</h2>
         </div>
-    </div>
-    
-    <div className="dashboard">
-      <div className="dashboard-header">
-        <h1>My DAOs</h1>
-        <button onClick={handleCreateDao}>
-          Create New DAO
-        </button>
       </div>
 
-      <div className="dashboard-sections">
-        <section className="created-daos">
-          <h2>Created DAOs</h2>
-          {createdDaos.length === 0 ? (
-            <p>You haven't created any DAOs yet.</p>
-          ) : (
-            <div className="dao-grid">
-              {createdDaos.map((dao) => (
-                <div
-                  key={dao.publicKey.toBase58()}
-                  className="dao-card"
-                  onClick={() => handleDaoClick(dao)}
-                >
-                  <h3>{dao.account.daoName}</h3>
-                  <p>Proposals: {dao.account.proposalCount.toString()}</p>
-                  <p>Total Supply: {dao.account.totalSupply.toString()}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+      {/* Wallet not connected */}
+      {!wallet.publicKey && (
+        <div className="dashboard">
+          <p>Please connect your wallet to view your DAOs.</p>
+        </div>
+      )}
 
-        <section className="member-daos">
-          <h2>Joined DAOs</h2>
-          {memberDaos.length === 0 ? (
-            <p>You haven't joined any DAOs yet.</p>
-          ) : (
-            <div className="dao-grid">
-              {memberDaos.map((dao) => (
-                <div
-                  key={dao.publicKey.toBase58()}
-                  className="dao-card"
-                  onClick={() => handleDaoClick(dao)}
-                >
-                  <h3>{dao.account.daoName}</h3>
-                  <p>Proposals: {dao.account.proposalCount.toString()}</p>
-                  <p>Total Supply: {dao.account.totalSupply.toString()}</p>
+
+      {wallet.publicKey && isLoading && (
+        <div className="dashboard">
+          <p>Loading your DAOs...</p>
+        </div>
+      )}
+
+      {/* Wallet connected, DAOs loaded */}
+      {wallet.publicKey && !isLoading && (
+        <div className="dashboard">
+          <div className="dashboard-header">
+            <h1>Your Decentralized Organizations</h1>
+            <button onClick={handleCreateDao}><h3>Create New DAO</h3></button>
+          </div>
+
+          <div className="dashboard-sections">
+            <section className="created-daos">
+              <h2>Created DAOs</h2>
+              {createdDaos.length === 0 ? (
+                <p>You haven't created any DAOs yet.</p>
+              ) : (
+                <div className="dao-grid">
+                  {createdDaos.map((dao) => (
+                    <div
+                      key={dao.publicKey.toBase58()}
+                      className="dao-card"
+                      onClick={() => handleDaoClick(dao)}
+                    >
+                      <h3>{dao.account.daoName}</h3>
+                      <p>Proposals: {dao.account.proposalCount.toString()}</p>
+                      <p>Total Supply: {dao.account.totalSupply.toString()}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
+              )}
+            </section>
+                <br></br>
+            <section className="member-daos">
+              <h2>Joined DAOs</h2>
+              {memberDaos.length === 0 ? (
+                <p>You haven't joined any DAOs yet.</p>
+              ) : (
+                <div className="dao-grid">
+                  {memberDaos.map((dao) => (
+                    <div
+                      key={dao.publicKey.toBase58()}
+                      className="dao-card"
+                      onClick={() => handleDaoClick(dao)}
+                    >
+                      <h3>{dao.account.daoName}</h3>
+                      <p>Proposals: {dao.account.proposalCount.toString()}</p>
+                      <p>Total Supply: {dao.account.totalSupply.toString()}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+      )}
     </>
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

@@ -36,22 +36,23 @@
     padding-top: 3%;
     margin-left: 3%;
     margin-top: 5%;
-    margin-bottom: 2rem;
+    margin-bottom: 6rem;
     line-height: 2.3;
     border: 1px solid #ddd;
-    border-radius: 30px;
+    /* color: white; */
+    border-radius: 10px;
     /* box-shadow: 7px 7px 12px rgba(194, 192, 192, 0.1); */
 }
 
 .new-proposal-form input,
 .new-proposal-form textarea {
-    background-color: black;
+    background-color: rgba(0, 0, 0, 0.048);
     color: white;
     width: 85%;
     margin-bottom: 1rem;
     padding: 0.5rem;
     border: 1px solid #ddd;
-    border-radius: 9px;
+    border-radius: 0px; 
 }
 .new-proposal-form label{
     font-size: 20px;
@@ -59,7 +60,7 @@
 
 .form-buttons {
     display: flex;
-    gap: 26rem;
+    /* gap: 26rem; */
 }
 
 .proposal-card {
@@ -98,3 +99,15 @@ h3 {
     margin: 0 0 0.5rem 0;
 }
       
+
+textarea::placeholder {
+    color: white; /* Replace with your desired color */
+    opacity: 0.6; /* Optional: Ensures full opacity */
+  }
+  
+
+  input::placeholder {
+    color: white; /* Replace with your desired color */
+    opacity: 0.6; /* Optional: Ensures full opacity */
+  }
+  
