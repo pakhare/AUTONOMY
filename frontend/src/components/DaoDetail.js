@@ -7,6 +7,7 @@ import BN from "bn.js";
 import "./DaoDetail.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { getProposalStatus } from "../utils/proposalUtils";
 
 const DaoDetail = () => {
   const { daoId } = useParams();
@@ -180,8 +181,9 @@ const DaoDetail = () => {
                 <span>Amount: {proposal.amount.toString()}</span>
                 <span>Votes For: {proposal.votesFor.toString()}</span>
                 <span>Votes Against: {proposal.votesAgainst.toString()}</span>
-                <span>{proposal.executed ? "Executed" : Date.now() / 1000 < proposal.votingDeadline ? "Active" : proposal.votesFor > (proposal.votesFor + proposal.votesAgainst) / 2 ? "Approved" : "Rejected"}</span>
-              </div>
+                {/* <span>{proposal.executed ? "Executed" : Date.now() / 1000 < proposal.votingDeadline ? "Active" : proposal.votesFor > (proposal.votesFor + proposal.votesAgainst) / 2 ? "Approved" : "Rejected"}</span> */}
+
+                <span>{getProposalStatus(proposal, daoInfo)}</span>              </div>
             </div>
           ))}
         </div>

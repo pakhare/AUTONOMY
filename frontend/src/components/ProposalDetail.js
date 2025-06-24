@@ -7,6 +7,7 @@ import "./Proposal.css";
 import ProposalUpdate from "./ProposalUpdate";
 
 
+
 const ProposalDetail = () => {
   const { daoId, proposalId } = useParams();
   const [proposal, setProposal] = useState(null);
@@ -140,6 +141,37 @@ const ProposalDetail = () => {
     return now <= proposal.votingDeadline.toNumber();
   };
 
+  const getProposalStatus = () => {
+    if (!proposal || !daoInfo) return "";
+  
+    const now = Date.now() / 1000;
+    const deadline = Number(proposal.votingDeadline.toNumber());
+    const votesFor = Number(proposal.votesFor);
+    const votesAgainst = Number(proposal.votesAgainst);
+    const totalVotes = votesFor + votesAgainst;
+    const totalMembers = daoInfo.totalMembers || 0;
+    const quorumRequired = Math.ceil(totalMembers * 0.6); 
+  
+    if (isExecuted || proposal.executed) {
+      return "Executed";
+    }
+  
+    if (now < deadline && totalVotes < totalMembers) {
+      return "Active";
+    }
+  
+    if (totalVotes >= quorumRequired || totalVotes === totalMembers) {
+      if (votesFor > totalVotes / 2) {
+        return "Approved";
+      } else {
+        return "Rejected";
+      }
+    }
+  
+    return "Quorum Not Met";
+  };
+  
+
   const handleExecuteProposal = () => {
     // Simulate execution by updating local state
     setIsExecuted(true);
@@ -174,9 +206,13 @@ const ProposalDetail = () => {
       </div>
 
       <div className="proposal-content">
+      <h2>Status: {getProposalStatus(proposal, daoInfo)}</h2>
         <div className="proposal-info">
           <h2>Description</h2>
+          
           <p>{proposal.description}</p>
+
+          
 
           <div className="proposal-stats">
             <div className="stat">
@@ -252,15 +288,13 @@ const ProposalDetail = () => {
               </button>
             </div>
           )}
-
-          {!isExecuted && !proposal.executed && 
-           Number(proposal.votesFor) > Number(proposal.votesAgainst) && (
-            <div className="execute-button">
-              <button onClick={handleExecuteProposal} className="execute-btn">
-                Execute Proposal
-              </button>
-            </div>
-          )}
+{getProposalStatus() === "Approved" && (
+  <div className="execute-button">
+    <button onClick={handleExecuteProposal} className="execute-btn">
+      Execute Proposal
+    </button>
+  </div>
+)}
         </div>
 
         {/* <div className="status-history">
